@@ -45,7 +45,6 @@
   position: absolute; top: -12px;
   border-radius: 50%;
   background: #fff8e9;
-  filter: blur(.2px);
   animation-name: nlFall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
@@ -55,12 +54,14 @@
   100% { transform: translate3d(var(--drift, 20px), 104vh, 0); }
 }
 
-.nl-aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-.nl-aurora i { position: absolute; border-radius: 50%; filter: blur(90px); }
-.nl-aurora i:nth-child(1) { width: 620px; height: 380px; top: -160px; right: 4%; background: rgba(224, 163, 94, .2); animation: nlDrift 26s ease-in-out infinite alternate; }
-.nl-aurora i:nth-child(2) { width: 520px; height: 320px; top: 40px; left: -140px; background: rgba(58, 122, 100, .3); animation: nlDrift 34s ease-in-out infinite alternate-reverse; }
-.nl-aurora i:nth-child(3) { width: 700px; height: 300px; bottom: -160px; left: 30%; background: rgba(40, 92, 76, .32); animation: nlDrift 40s ease-in-out infinite alternate; }
-@keyframes nlDrift { to { transform: translate3d(40px, 30px, 0) scale(1.1); } }
+.nl-aurora {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(46% 34% at 78% -6%, rgba(224, 163, 94, .20), transparent 72%),
+    radial-gradient(38% 30% at -4% 6%, rgba(58, 122, 100, .30), transparent 74%),
+    radial-gradient(52% 28% at 62% 106%, rgba(40, 92, 76, .32), transparent 76%);
+}
+.nl-aurora i { display: none; }
 
 .nl-head, .nl-main { position: relative; z-index: 2; }
 
@@ -69,7 +70,6 @@
   display: flex; align-items: center; gap: 26px;
   padding: 22px 46px 20px;
   border-bottom: 1px solid rgba(240, 232, 212, .1);
-  backdrop-filter: blur(8px);
 }
 .nl-brand { display: flex; align-items: center; gap: 9px; font-family: var(--font-display); font-size: 17px; letter-spacing: -.01em; }
 .nl-brand .brand-mark { color: var(--accent); }

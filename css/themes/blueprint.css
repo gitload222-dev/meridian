@@ -71,9 +71,7 @@
   gap: 18px;
   flex-wrap: wrap;
   padding: 13px 34px 11px;
-  background: rgba(8, 38, 72, .92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(8, 38, 72, .97);
   border-bottom: 3px double rgba(220, 240, 255, .38);
 }
 .bp-head-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
