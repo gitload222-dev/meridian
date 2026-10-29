@@ -144,6 +144,7 @@
 .sw-select svg { position: absolute; right: 7px; pointer-events: none; color: var(--text); }
 .sw-legend { margin-left: auto; display: flex; gap: 16px; font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .sw-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw-legend b { font-weight: 500; color: var(--text); letter-spacing: 0; }
 .sw-sq { width: 8px; height: 8px; background: var(--text); }
 .sw-line { width: 14px; height: 0; border-top: 1px dashed var(--accent); }
 

@@ -110,7 +110,7 @@ export default {
           ${segmentSelect('sw', state)}
           <div class="sw-legend">
             <span><i class="sw-sq"></i>Выручка</span>
-            <span><i class="sw-line"></i>Среднее</span>
+            <span><i class="sw-line"></i>Среднее <b>${fmtMoneyShort(avg)}</b></span>
           </div>
         </section>
 
@@ -124,7 +124,6 @@ export default {
             ${[0, .5, 1].map(t => `<text x="0" y="${y1 - t * (y1 - y0) + 3}" fill="#8c887d" font-size="8" font-family="JetBrains Mono, monospace">${fmtMoneyShort(max * t)}</text>`).join('')}
             ${bars.map((b, i) => `<rect class="sw-bar" data-i="${i}" x="${b.x.toFixed(1)}" y="${b.top.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(1, b.h).toFixed(1)}" fill="${pts[i].v >= avg ? '#111' : '#c9c4b6'}" data-orig="${pts[i].v >= avg ? '#111' : '#c9c4b6'}"/>`).join('')}
             <line x1="${x0}" x2="${x1}" y1="${avgY}" y2="${avgY}" stroke="#e2231a" stroke-width="1" stroke-dasharray="4 3"/>
-            <text x="${x1}" y="${avgY - 6}" text-anchor="end" fill="#e2231a" font-size="7.5" font-family="JetBrains Mono, monospace">СРЕДНЕЕ ${fmtMoneyShort(avg)}</text>
             ${[0, Math.round((n - 1) / 2), n - 1].map(i => `<text x="${(x0 + i * bw + bw / 2).toFixed(1)}" y="${H - 8}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}" fill="#8c887d" font-size="8" font-family="JetBrains Mono, monospace">${pts[i].label.toUpperCase()}</text>`).join('')}
           </svg>
         </section>
