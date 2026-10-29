@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru" data-theme="azure">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meridian — Revenue Intelligence</title>
+  <meta name="description" content="Meridian — интерактивная платформа аналитики выручки. Десять визуальных концепций, один датасет.">
+  <meta name="theme-color" content="#050d20">
+  <link rel="stylesheet" href="assets/fonts.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/studio.css">
+  <link rel="stylesheet" href="css/themes/azure.css">
+  <link rel="stylesheet" href="css/themes/noel.css">
+  <link rel="stylesheet" href="css/themes/swiss.css">
+  <link rel="stylesheet" href="css/themes/terminal.css">
+  <link rel="stylesheet" href="css/themes/prism.css">
+  <link rel="stylesheet" href="css/themes/herbarium.css">
+  <link rel="stylesheet" href="css/themes/brutal.css">
+  <link rel="stylesheet" href="css/themes/blueprint.css">
+  <link rel="stylesheet" href="css/themes/broadsheet.css">
+  <link rel="stylesheet" href="css/themes/orbital.css">
+  <script>
+    try {
+      var t = (location.hash || '').replace('#', '');
+      var s = JSON.parse(localStorage.getItem('meridian.ui.v1') || '{}');
+      if (!t && s.theme) t = s.theme;
+      if (t) document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div id="boot">
+    <div class="boot-inner">
+      <svg class="boot-mark" width="46" height="46" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1" opacity=".45"/>
+        <ellipse cx="16" cy="16" rx="6.2" ry="13" stroke="currentColor" stroke-width="1" opacity=".7"/>
+        <path d="M3 16h26" stroke="currentColor" stroke-width="1" opacity=".45"/>
+        <circle cx="16" cy="16" r="2.4" fill="currentColor"/>
+      </svg>
+      <div class="boot-word">MERIDIAN</div>
+      <div class="boot-line"><i></i></div>
+    </div>
+  </div>
+
+  <div id="app"></div>
+  <div id="tooltip" class="mrd-tooltip" role="status" aria-live="polite"></div>
+  <div id="curtain" class="curtain" aria-hidden="true"></div>
+  <div id="overlay-root"></div>
+  <div id="drawer-root"></div>
+  <div id="palette-root"></div>
+  <div id="toast-root" aria-live="polite"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
