@@ -21,7 +21,7 @@ const poster = `
   }).join('')}</div>
   <div class="p-noel-foot">СОЧЕЛЬНИК · 02</div>`;
 
-function snowLayer(count = 44) {
+function snowLayer(count = 34) {
   let out = '';
   for (let i = 0; i < count; i++) {
     const x = (i * 47.3) % 100;
@@ -86,7 +86,7 @@ export default {
 
     return `
     <div class="nl-root" id="nl-top">
-      ${snowLayer(46)}
+      ${snowLayer(window.innerWidth < 760 ? 20 : 34)}
       <div class="nl-aurora" aria-hidden="true"><i></i><i></i><i></i></div>
 
       <header class="nl-head">
