@@ -180,8 +180,8 @@
 }
 .nl-chip.is-bad { background: rgba(233, 139, 122, .14); color: #f0a99a; }
 
-.nl-legend { display: flex; gap: 14px; font-size: 9.5px; color: var(--faint); padding-top: 6px; }
-.nl-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.nl-legend { display: flex; gap: 14px; font-size: 9.5px; color: var(--faint); padding-top: 6px; flex-wrap: wrap; }
+.nl-legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .nl-legend i { width: 16px; height: 2px; border-radius: 2px; }
 .nl-l1 { background: linear-gradient(90deg, #e7a55e, #ffe9c4); }
 .nl-l2 { background: repeating-linear-gradient(90deg, rgba(247, 239, 224, .45) 0 3px, transparent 3px 6px); }
@@ -427,6 +427,8 @@
   .nl-hero-meta { flex-wrap: wrap; gap: 12px; }
   .nl-hero-rule { display: none; }
   .nl-card { padding: 17px 17px; border-radius: 16px; }
+  .nl-card-head { flex-wrap: wrap; gap: 10px; }
+  .nl-legend { padding-top: 0; }
   .nl-big { font-size: 30px; }
   .nl-doors { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
   .nl-globe-glass { width: 140px; height: 140px; }
