@@ -33,6 +33,7 @@ html {
   -webkit-text-size-adjust: 100%;
   background: var(--bg);
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 body {

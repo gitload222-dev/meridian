@@ -26,7 +26,7 @@ export function studioHTML(themes, activeId) {
       </div>
     </button>`).join('');
 
-  return `<div class="studio" role="dialog" aria-modal="true" aria-label="Концепт-студия">
+  return `<div class="studio" role="dialog" aria-modal="true" aria-label="Концепт-студия" tabindex="-1">
     <div class="studio-noise" aria-hidden="true"></div>
     <header class="studio-head">
       <div class="studio-brand">${logo(22)}<span>MERIDIAN</span><i>/</i><span class="muted">CONCEPT STUDIO</span></div>

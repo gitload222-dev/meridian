@@ -16,6 +16,7 @@
   transition: opacity .38s ease, transform .38s ease;
 }
 .studio.is-in { opacity: 1; transform: none; }
+.studio:focus { outline: none; }
 .studio::after {
   content: "";
   position: fixed;

@@ -151,7 +151,7 @@ function openStudio() {
   overlayRoot.innerHTML = studioHTML(THEMES, state.theme);
   document.body.classList.add('no-scroll');
   requestAnimationFrame(() => overlayRoot.querySelector('.studio')?.classList.add('is-in'));
-  overlayRoot.querySelector('.studio')?.focus?.();
+  overlayRoot.querySelector('.studio')?.focus?.({ preventScroll: true });
 }
 function closeStudio() {
   const el = overlayRoot.querySelector('.studio');
