@@ -294,12 +294,10 @@ img { max-width: 100%; }
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity .18s ease-out, visibility .18s ease-out;
+  transition: opacity .2s ease-out, visibility .2s ease-out;
 }
 .curtain.is-on { opacity: 1; visibility: visible; }
-/* Появление без перехода — мгновенно закрывает кадр, чтобы скрыть swap DOM. */
-.curtain.is-instant { transition: none !important; }
-.curtain-inner { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; text-align: center; animation: curtainIn .28s .04s both; }
+.curtain-inner { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; text-align: center; animation: curtainIn .26s .03s both; }
 .curtain-num { font-family: var(--font-mono); font-size: 11px; letter-spacing: .3em; opacity: .45; }
 .curtain-name { font-family: var(--font-display); font-size: clamp(38px, 6vw, 76px); font-weight: 500; letter-spacing: -.03em; line-height: 1.05; }
 .curtain-en { font-family: var(--font-mono); font-size: 10px; letter-spacing: .3em; text-transform: uppercase; opacity: .5; margin-top: 8px; }
