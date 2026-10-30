@@ -284,8 +284,20 @@ export function buildViewModel(state) {
 
   const last30 = days.slice(-30).map(d => segId === 'all' ? d.revenue : d.bySegment[segId]);
   const prev30 = days.slice(-60, -30).map(d => segId === 'all' ? d.revenue : d.bySegment[segId]);
-  const mrr = sum(last30);
-  const mrrDelta = (mrr - sum(prev30)) / sum(prev30) * 100;
+  // MRR — регулярная (подписочная) выручка в месяц: проекция текущего
+  // календарного месяца на полный месяц × доля регулярной выручки сегмента.
+  // Так MRR не совпадает с «выручкой за 30 дней» и корректно считает ARPA.
+  const RECURRING = { all: 0.78, enterprise: 0.87, mid: 0.78, startup: 0.63 };
+  const monthStart = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+  const prevMonthStart = new Date(TODAY.getFullYear(), TODAY.getMonth() - 1, 1);
+  const daysInMonth = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 0).getDate();
+  const daysInPrev = new Date(TODAY.getFullYear(), TODAY.getMonth(), 0).getDate();
+  const monthDays = days.filter(d => d.date >= monthStart).map(d => segId === 'all' ? d.revenue : d.bySegment[segId]);
+  const prevMonthDays = days.filter(d => d.date >= prevMonthStart && d.date < monthStart).map(d => segId === 'all' ? d.revenue : d.bySegment[segId]);
+  const recShare = RECURRING[segId] ?? 0.78;
+  const mrr = monthDays.length ? sum(monthDays) / monthDays.length * daysInMonth * recShare : sum(last30) * recShare;
+  const mrrPrev = prevMonthDays.length ? sum(prevMonthDays) / prevMonthDays.length * daysInPrev * recShare : sum(prev30) * recShare;
+  const mrrDelta = mrrPrev ? (mrr - mrrPrev) / mrrPrev * 100 : 0;
 
   const acctNow = days[days.length - 1].accounts * (segId === 'all' ? 1 : { enterprise: 0.115, mid: 0.296, startup: 0.589 }[segId]);
   const acctPrev = current[0].accounts * (segId === 'all' ? 1 : { enterprise: 0.115, mid: 0.296, startup: 0.589 }[segId]);
