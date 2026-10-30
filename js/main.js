@@ -128,6 +128,7 @@ async function switchTheme(id, opts = {}) {
   }
 
   const token = ++switchToken;
+  const t0 = performance.now();
   curtain.innerHTML = `<div class="curtain-inner">
     <span class="curtain-num">${t.num}</span>
     <span class="curtain-name">${t.name}</span>
@@ -136,11 +137,14 @@ async function switchTheme(id, opts = {}) {
   curtain.style.setProperty('--curtain-bg', t.bg || '#08090c');
   curtain.style.setProperty('--curtain-accent', t.accent || '#fff');
   curtain.classList.add('is-on');
-  await wait(240);
+  // Два кадра — занавес гарантированно нарисован и непрозрачен,
+  // дальше тяжёлый рендер новой темы идёт за ним, а не на глазах.
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   if (token !== switchToken) return;
   render();
   closeStudio();
-  await wait(140);
+  // Короткая витрина имени темы: как только занавес успел закрыть экран, сразу уходим.
+  await wait(Math.max(0, 190 - (performance.now() - t0)));
   if (token !== switchToken) return;
   curtain.classList.remove('is-on');
 }
