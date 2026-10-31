@@ -113,7 +113,7 @@ export default {
               ${icon('search', 15)}<span>Поиск</span><kbd>⌘K</kbd>
             </button>
             ${themeButton('az', 'Глубина')}
-            <button class="az-iconbtn" aria-label="Уведомления">${icon('bell', 17)}<i class="az-dot"></i></button>
+            <button class="az-iconbtn az-bell" data-action="attention" aria-label="Уведомления" aria-expanded="false" aria-haspopup="dialog">${icon('bell', 17)}<i class="az-dot"></i></button>
             <div class="az-user">АК</div>
           </div>
         </header>

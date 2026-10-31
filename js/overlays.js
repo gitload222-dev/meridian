@@ -198,3 +198,26 @@ export function drawerHTML(a, ctx) {
     </div>
   </aside>`;
 }
+
+/* ---------------- attention popover ---------------- */
+export function attentionHTML(accounts) {
+  const rows = accounts.map(a => {
+    const tone = a.health < 70 ? 'is-risk' : 'is-watch';
+    return `<button class="at-item" data-account-id="${a.id}">
+      <span class="at-badge ${tone}">${a.health}</span>
+      <span class="at-text">
+        <span class="at-name">${esc(a.name)}</span>
+        <span class="at-meta">${esc(a.region)} · ${esc(a.owner)} · ${fmtMoney(a.mrr)}</span>
+      </span>
+      <span class="at-trend ${a.growth < 0 ? 'is-down' : ''}">${a.growth < 0 ? '' : '+'}${a.growth.toFixed(1)}%</span>
+    </button>`;
+  }).join('');
+  return `<div class="attn" role="dialog" aria-label="Требуют внимания" tabindex="-1">
+    <div class="attn-head">
+      <span>Требуют внимания</span>
+      <b>${accounts.length}</b>
+    </div>
+    <div class="attn-list">${rows || '<p class="attn-empty">Все аккаунты в норме</p>'}</div>
+    <p class="attn-foot">Показаны аккаунты с наименьшим индексом здоровья</p>
+  </div>`;
+}

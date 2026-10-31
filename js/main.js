@@ -3,7 +3,7 @@
    ============================================================ */
 import { buildViewModel, toCSV, fmtMoney, fmtInt, fmtPct, fmtDelta, RANGES, SEGMENTS } from './data.js';
 import { THEMES } from './themes/index.js';
-import { studioHTML, paletteHTML, paletteResults, paletteListHTML, drawerHTML } from './overlays.js';
+import { studioHTML, paletteHTML, paletteResults, paletteListHTML, drawerHTML, attentionHTML } from './overlays.js';
 
 const app = document.getElementById('app');
 const overlayRoot = document.getElementById('overlay-root');
@@ -60,6 +60,7 @@ const api = {
 
 /* ---------------- render ---------------- */
 function render(opts = {}) {
+  closeAttention();
   vm = buildViewModel(state);
   const t = currentTheme();
   document.documentElement.dataset.theme = t.id;
@@ -215,6 +216,7 @@ function runPaletteItem(item) {
 function openAccount(id) {
   const a = vm.getAccount(id);
   if (!a) return;
+  closeAttention();
   drawerRoot.innerHTML = drawerHTML(a, api);
   document.body.classList.add('no-scroll');
   const drawer = drawerRoot.querySelector('.drawer');
@@ -233,6 +235,42 @@ function closeDrawer(instant = false) {
   document.body.classList.remove('no-scroll');
   if (instant) { drawerRoot.innerHTML = ''; return; }
   setTimeout(() => { if (!drawer.classList.contains('is-open')) drawerRoot.innerHTML = ''; }, 420);
+}
+
+/* ---------------- attention popover ---------------- */
+let attnRoot = null;
+function attnContainer() {
+  if (!attnRoot) {
+    attnRoot = document.createElement('div');
+    attnRoot.id = 'attn-root';
+    document.body.appendChild(attnRoot);
+  }
+  return attnRoot;
+}
+function openAttention(anchor) {
+  const root = attnContainer();
+  if (root.querySelector('.attn')) { closeAttention(); return; }
+  root.innerHTML = attentionHTML(vm.riskAccounts);
+  const pop = root.querySelector('.attn');
+  const r = anchor.getBoundingClientRect();
+  const w = 300;
+  let left = Math.min(Math.max(8, r.right - w), window.innerWidth - w - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = (r.bottom + 8) + 'px';
+  requestAnimationFrame(() => { pop.classList.add('is-in'); pop.focus({ preventScroll: true }); });
+  anchor.setAttribute('aria-expanded', 'true');
+}
+function closeAttention() {
+  if (!attnRoot) return;
+  const pop = attnRoot.querySelector('.attn');
+  if (!pop) return;
+  pop.classList.remove('is-in');
+  document.querySelectorAll('[data-action="attention"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+  setTimeout(() => { if (attnRoot && !attnRoot.querySelector('.attn.is-in')) attnRoot.innerHTML = ''; }, 180);
+}
+function toggleAttention(anchor) {
+  const open = !!attnRoot?.querySelector('.attn');
+  if (open) closeAttention(); else openAttention(anchor);
 }
 
 /* ---------------- toast / export ---------------- */
@@ -264,6 +302,8 @@ function exportCSV() {
 
 /* ---------------- global events ---------------- */
 document.addEventListener('click', e => {
+  if (attnRoot?.querySelector('.attn') && !e.target.closest('.attn') && !e.target.closest('[data-action="attention"]')) closeAttention();
+
   const range = e.target.closest('[data-range]');
   if (range) { setRange(range.dataset.range); return; }
 
@@ -298,6 +338,7 @@ document.addEventListener('click', e => {
     if (a === 'compare') toggleCompare();
     if (a === 'palette') openPalette();
     if (a === 'studio') openStudio();
+    if (a === 'attention') toggleAttention(action);
     return;
   }
 
@@ -341,13 +382,16 @@ document.addEventListener('keydown', e => {
   const paletteOpen = !!paletteRoot.querySelector('.palette');
   const studioOpen = !!overlayRoot.querySelector('.studio');
   const drawerOpen = !!drawerRoot.querySelector('.drawer');
+  const attnOpen = !!attnRoot?.querySelector('.attn');
 
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault();
+    closeAttention();
     paletteOpen ? closePalette() : openPalette();
     return;
   }
   if (e.key === 'Escape') {
+    if (attnOpen) { closeAttention(); return; }
     if (paletteOpen) { closePalette(); return; }
     if (studioOpen) { closeStudio(); return; }
     if (drawerOpen) { closeDrawer(); return; }
