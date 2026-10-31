@@ -136,9 +136,9 @@ async function switchTheme(id, opts = {}) {
   </div>`;
   curtain.style.setProperty('--curtain-bg', t.bg || '#08090c');
   curtain.style.setProperty('--curtain-accent', t.accent || '#fff');
-  // 1) Занавес плавно закрывается (~200 мс).
+  // 1) Занавес плавно закрывается (переход .2s + запас на дропнутый кадр).
   curtain.classList.add('is-on');
-  await wait(210);
+  await wait(240);
   if (token !== switchToken) return;
   // 2) Полностью за непрозрачным занавесом меняем тему — swap DOM не виден.
   render();
