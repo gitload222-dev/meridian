@@ -75,7 +75,7 @@ export function paletteResults(query, themes, accounts) {
   const match = (...vals) => !q || vals.join(' ').toLowerCase().includes(q);
 
   const themeItems = themes
-    .filter(t => match(t.name, t.en, t.tagline, t.num))
+    .filter(t => match(t.name, t.en, t.id, t.tagline, t.num))
     .map(t => ({
       key: 'theme:' + t.id, group: 'Концепции', icon: 'layers',
       title: t.name, meta: `${t.en} · ${t.tagline}`, hint: t.num,
@@ -88,7 +88,7 @@ export function paletteResults(query, themes, accounts) {
     run: { type: 'range', id: r.id },
   }));
 
-  const segItems = SEGMENTS.filter(s => match(s.label)).map(s => ({
+  const segItems = SEGMENTS.filter(s => match(s.label, s.id, s.short)).map(s => ({
     key: 'segment:' + s.id, group: 'Сегмент', icon: 'filter',
     title: s.label, meta: `${fmtInt(s.accounts)} аккаунтов · NRR ${fmtPct(s.nrr)}`,
     run: { type: 'segment', id: s.id },
