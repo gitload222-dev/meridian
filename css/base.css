@@ -283,6 +283,17 @@ img { max-width: 100%; }
 .dr-ghost { height: 42px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
 .dr-ghost:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
 
+/* ---------------- view transitions ---------------- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: .34s;
+  animation-timing-function: cubic-bezier(.4, 0, .2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+}
+
 /* ---------------- curtain ---------------- */
 .curtain {
   position: fixed;
@@ -296,6 +307,11 @@ img { max-width: 100%; }
   pointer-events: none;
   transition: opacity .2s ease-out, visibility .2s ease-out;
 }
+/* изолируем занавес из кроссфейда корня: он накладывается поверх */
+.curtain { view-transition-name: mrd-curtain; }
+::view-transition-group(mrd-curtain) { animation-duration: 0s; }
+::view-transition-old(mrd-curtain),
+::view-transition-new(mrd-curtain) { animation: none; mix-blend-mode: normal; }
 .curtain.is-on { opacity: 1; visibility: visible; }
 .curtain-inner { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; text-align: center; animation: curtainIn .26s .03s both; }
 .curtain-num { font-family: var(--font-mono); font-size: 11px; letter-spacing: .3em; opacity: .45; }

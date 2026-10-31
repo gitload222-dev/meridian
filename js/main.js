@@ -31,7 +31,6 @@ function loadState() {
 
 const state = loadState();
 let vm = null;
-let switchToken = 0;
 let palGroups = [];
 let palFlat = [];
 let palIndex = 0;
@@ -47,7 +46,6 @@ function save() {
 }
 
 function currentTheme() { return THEMES.find(t => t.id === state.theme) || THEMES[0]; }
-const wait = ms => new Promise(r => setTimeout(r, ms));
 
 const api = {
   state,
@@ -113,42 +111,66 @@ function toggleCompare() {
 }
 
 /* ---------------- theme switching ---------------- */
-async function switchTheme(id, opts = {}) {
+const switchToken = { current: 0 };
+
+function curtainInner(t) {
+  return `<div class="curtain-inner">
+    <span class="curtain-num">${t.num}</span>
+    <span class="curtain-name">${t.name}</span>
+    <span class="curtain-en">${t.en}</span>
+  </div>`;
+}
+
+/**
+ * Переключение темы через View Transitions API.
+ * Браузер сам делает снапшот старого состояния, даёт callback'у
+ * перестроить DOM при подавленном рендеринге (тяжёлый render()
+ * полностью невидим), затем анимирует на композиторе.
+ * Занавес с именем концепции — слой внутри transition, а не таймеры.
+ */
+function switchTheme(id, opts = {}) {
   const t = THEMES.find(x => x.id === id);
   if (!t) return;
   if (t.id === state.theme) { closeStudio(); return; }
   closePalette();
   closeDrawer(true);
+  closeAttention();
 
   state.theme = t.id; save();
   try { history.replaceState(null, '', '#' + t.id); } catch { /* noop */ }
 
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduced || opts.instant) {
-    render(); closeStudio(); return;
+  const instant = reduced || opts.instant || !document.startViewTransition;
+
+  const apply = () => {
+    // внутри transition рендеринг подавлен — меняем всё разом
+    document.documentElement.style.setProperty('--curtain-bg', t.bg || '#08090c');
+    render();
+    closeStudio();
+  };
+
+  if (instant) {
+    render();
+    closeStudio();
+    return;
   }
 
-  const token = ++switchToken;
-  const t0 = performance.now();
-  curtain.innerHTML = `<div class="curtain-inner">
-    <span class="curtain-num">${t.num}</span>
-    <span class="curtain-name">${t.name}</span>
-    <span class="curtain-en">${t.en}</span>
-  </div>`;
+  const token = ++switchToken.current;
+  const vt = document.startViewTransition(apply);
+  vt.finished.catch(() => {}).finally(() => {
+    if (token === switchToken.current) curtain.innerHTML = '';
+  });
+
+  // Слой занавеса поверх анимации: имя концепции + подложка цвета темы.
+  curtain.innerHTML = curtainInner(t);
   curtain.style.setProperty('--curtain-bg', t.bg || '#08090c');
   curtain.style.setProperty('--curtain-accent', t.accent || '#fff');
-  // 1) Занавес плавно закрывается (переход .2s + запас на дропнутый кадр).
   curtain.classList.add('is-on');
-  await wait(240);
-  if (token !== switchToken) return;
-  // 2) Полностью за непрозрачным занавесом меняем тему — swap DOM не виден.
-  render();
-  closeStudio();
-  // Даём первому кадру новой темы отрисоваться, чтобы открытие было чистым.
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-  if (token !== switchToken) return;
-  // 3) Плавно открываем уже готовую тему.
-  curtain.classList.remove('is-on');
+  const hide = () => { if (token === switchToken.current) curtain.classList.remove('is-on'); };
+  // В обычном браузере transition закрывается по vt.ready; в headless (где
+  // ready/finished не разрешаются) — по таймауту, чтобы занавес не завис.
+  vt.ready.then(hide).catch(hide);
+  setTimeout(hide, 480);
 }
 
 /* ---------------- studio ---------------- */
