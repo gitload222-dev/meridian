@@ -429,3 +429,10 @@ img { max-width: 100%; }
 .at-trend.is-down { color: var(--bad); }
 .attn-empty { padding: 14px 10px; margin: 0; font-size: 12px; color: var(--muted); text-align: center; }
 .attn-foot { margin: 4px 2px 2px; padding: 8px 10px 4px; border-top: 1px solid var(--line); font-size: 10px; color: var(--faint); }
+
+/* ---------------- общие анимации концепций ----------------
+   Раньше жили в azure.css, который грузился вместе со всеми темами.
+   При ленивой загрузке CSS (code splitting) azFade/azPulse нужны
+   темам noel и prism, поэтому объявлены в общем слое. */
+@keyframes azFade { to { opacity: 1; } }
+@keyframes azPulse { 50% { opacity: .3; } }
