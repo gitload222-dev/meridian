@@ -3,7 +3,7 @@ import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate,
 import type { ViewModel, AppState } from '../lib/data';
 import type { ThemeProps } from '../lib/themes';
 import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
-import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, hideTip, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
 import '../styles/themes/blueprint.css';
 
 /* ============================================================
@@ -352,7 +352,7 @@ function render(vm: ViewModel, state: AppState): string {
     </div>`;
 }
 
-function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState): (() => void) | void {
   // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
   const root = rootEl as any;
     const max = niceMax(vm.revenue.max * 1.12);
@@ -384,7 +384,11 @@ export default function Theme({ vm, state, actions, onReady }: ThemeProps) {
     root.innerHTML = render(vm, state);
     const cleanup = mount(root, vm, state);
     onReady?.();
-    return cleanup;
+    return () => {
+      if (typeof cleanup === 'function') cleanup();
+      // тултип общий на всю страницу: при смене темы он не должен остаться висеть
+      hideTip();
+    };
   });
 
   void actions;

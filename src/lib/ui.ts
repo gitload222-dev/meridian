@@ -117,6 +117,8 @@ export function countUp(el: HTMLElement | null | undefined, target: number, form
   }
   const t0 = performance.now();
   const frame = now => {
+    // элемент мог быть заменён перерисовкой темы — не крутим rAF вхолостую
+    if (!el.isConnected) return;
     const t = Math.min(1, (now - t0) / duration);
     const eased = 1 - Math.pow(1 - t, 3);
     el.textContent = formatter(target * eased);

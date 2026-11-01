@@ -323,7 +323,13 @@ export function prefetchTheme(id: string) {
 /* ---------------- global delegation ---------------- */
 let searchTimer = 0;
 
+let eventsBound = false;
+
 export function initGlobalEvents() {
+  // StrictMode в dev монтирует App дважды — слушатели не должны дублироваться.
+  if (eventsBound) return;
+  eventsBound = true;
+
   document.addEventListener('click', e => {
     const target = e.target as HTMLElement;
     if (attnRoot?.querySelector('.attn') && !target.closest('.attn') && !target.closest('[data-action="attention"]')) closeAttention();
