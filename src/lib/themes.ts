@@ -27,6 +27,8 @@ export interface ThemeProps {
   vm: ViewModel;
   state: AppState;
   actions: ActionsLike;
+  /** Вызывается после того, как разметка темы реально попала в DOM. */
+  onReady?: () => void;
 }
 
 export const THEME_LOADERS: Record<string, () => Promise<{ default: ComponentType<ThemeProps> }>> = {

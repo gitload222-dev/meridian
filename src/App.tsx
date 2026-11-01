@@ -1,8 +1,8 @@
 /* ============================================================
    MERIDIAN · App shell
    ============================================================ */
-import { Suspense, lazy, useEffect, useMemo, useRef } from 'react';
-import type { ComponentType, LazyExoticComponent } from 'react';
+import { Suspense, lazy, memo, useEffect, useMemo, useRef } from 'react';
+import type { ComponentType } from 'react';
 import { buildViewModel } from './lib/data';
 import type { ViewModel } from './lib/data';
 import { THEME_IDS, THEME_LOADERS, themeMeta } from './lib/themes';
@@ -16,9 +16,11 @@ import {
 import './styles/base.css';
 import './styles/studio.css';
 
-const THEME_COMPONENTS = {} as Record<string, LazyExoticComponent<ComponentType<ThemeProps>>>;
+// memo: тема перерисовывается только при смене vm/state, а не на каждый
+// рендер шелла (иначе innerHTML темы пересобирался бы зря).
+const THEME_COMPONENTS = {} as Record<string, ComponentType<ThemeProps>>;
 for (const id of THEME_IDS) {
-  THEME_COMPONENTS[id] = lazy(THEME_LOADERS[id]);
+  THEME_COMPONENTS[id] = memo(lazy(THEME_LOADERS[id])) as ComponentType<ThemeProps>;
 }
 
 const ACTIONS: ActionsLike = {
@@ -26,15 +28,20 @@ const ACTIONS: ActionsLike = {
   openStudio, openPalette, rerender,
 };
 
-function Boot() {
-  useEffect(() => {
-    const boot = document.getElementById('boot');
-    if (boot && !boot.classList.contains('is-done')) {
-      boot.classList.add('is-done');
-      setTimeout(() => boot.remove(), 700);
-    }
-  }, []);
-  return null;
+/** Стабильная на всю жизнь компонента функция-колбэк. */
+function useCallbackRef(fn: () => void) {
+  const ref = useRef(fn);
+  ref.current = fn;
+  const stable = useMemo(() => () => ref.current(), []);
+  return stable;
+}
+
+/** Boot-экран снимаем только после первого кадра темы, иначе виден пробел. */
+function hideBoot() {
+  const boot = document.getElementById('boot');
+  if (!boot || boot.classList.contains('is-done')) return;
+  boot.classList.add('is-done');
+  setTimeout(() => boot.remove(), 700);
 }
 
 export default function App() {
@@ -43,6 +50,7 @@ export default function App() {
   const Theme = THEME_COMPONENTS[state.theme];
   const prevTheme = useRef(state.theme);
   const prevSearch = useRef(state.search);
+  const booted = useRef(false);
 
   // imperative-модули (студия/палитра/CSV) читают актуальную модель отсюда
   setCurrentVm(vm);
@@ -77,12 +85,23 @@ export default function App() {
     try { input.setSelectionRange(len, len); } catch { /* noop */ }
   }, [state.search, vm]);
 
+  // стабильная ссылка: смена идентичности onReady вызвала бы лишний
+  // ре-рендер темы (и перезапуск счётчиков).
+  const handleReady = useCallbackRef(() => {
+    if (booted.current) return;
+    booted.current = true;
+    requestAnimationFrame(hideBoot);
+  });
+
+  // Страховка: если чанк темы не ответил, boot не должен висеть вечно.
+  useEffect(() => {
+    const id = setTimeout(hideBoot, 6000);
+    return () => clearTimeout(id);
+  }, []);
+
   return (
-    <>
-      <Boot />
-      <Suspense fallback={null}>
-        {Theme ? <Theme vm={vm} state={state} actions={ACTIONS} /> : null}
-      </Suspense>
-    </>
+    <Suspense fallback={null}>
+      {Theme ? <Theme vm={vm} state={state} actions={ACTIONS} onReady={handleReady} /> : null}
+    </Suspense>
   );
 }

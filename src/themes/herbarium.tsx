@@ -340,14 +340,16 @@ function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
 /* ---------------- React-обёртка ----------------
    Разметка темы — та же строка, что в v1: визуальная верность 1:1.
    React отвечает за монтирование, жизненный цикл и code-splitting. */
-export default function Theme({ vm, state, actions }: ThemeProps) {
+export default function Theme({ vm, state, actions, onReady }: ThemeProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
     root.innerHTML = render(vm, state);
-    return mount(root, vm, state);
+    const cleanup = mount(root, vm, state);
+    onReady?.();
+    return cleanup;
   });
 
   void actions;

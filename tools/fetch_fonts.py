@@ -57,7 +57,7 @@ for fam in FAMILIES:
             face = face.replace(remote, f"assets/fonts/{name}")
             blocks_out.append(f"/* {subset} */\n" + face)
 
-with open(os.path.join(ROOT, "assets", "fonts.css"), "w", encoding="utf-8") as fh:
+with open(os.path.join(ROOT, "public", "fonts.css"), "w", encoding="utf-8") as fh:
     fh.write("/* Local webfonts: Inter, Manrope, Unbounded, Playfair Display, Prata,\n"
              "   JetBrains Mono, Oswald, Caveat, Russo One, Yeseva One, Lora */\n\n")
     fh.write("\n\n".join(blocks_out) + "\n")
