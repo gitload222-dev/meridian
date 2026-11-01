@@ -1,33 +1,21 @@
+import { useEffect, useRef } from 'react';
+import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate, monthYear } from '../lib/data';
+import type { ViewModel, AppState } from '../lib/data';
+import type { ThemeProps } from '../lib/themes';
+import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import '../styles/themes/terminal.css';
+
 /* ============================================================
    CONCEPT 04 · ТЕРМИНАЛ / Meridian Terminal
    Dense trading-desk console. Mono, phosphor, tape.
    ============================================================ */
-import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta } from '../data.js';
-import { icon, logo, countUp } from '../ui.js';
-import { niceMax, linePath, areaPath, attachLineHover, sparkPath, roundedBar } from '../charts.js';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
 
-const poster = `
-  <div class="p-tm-head"><i></i><i></i><i></i><span>~/meridian — revenue</span></div>
-  <div class="p-tm-body">
-    <div class="p-tm-row"><b>42,1</b><span>МЛН ₽</span><em>▲ 2,0%</em></div>
-    <div class="p-tm-candles">
-      ${[42, 58, 51, 66, 61, 74, 68, 82, 76, 88, 79, 92].map((h, i) =>
-        `<i style="--h:${h}%;--c:${i % 3 === 2 ? '#ff6b5e' : '#45e0c0'}"></i>`).join('')}
-    </div>
-    <div class="p-tm-log">&gt; scan --segment=all --window=30d<br>&gt; nrr 110.5% · churn 1.9% · ok<br>&gt; <span class="caret">█</span></div>
-  </div>
-  <div class="p-tm-foot"><span>TERMINAL</span><span>04</span></div>`;
 
-export default {
-  id: 'terminal', num: '04', name: 'Терминал', en: 'Meridian Terminal',
-  tagline: 'Плотный консольный интерфейс',
-  palette: ['#050908', '#0f1a16', '#45e0c0', '#e8f5ef'],
-  bg: '#050908', accent: '#45e0c0', poster,
-
-  render(vm, ctx) {
-    const { state } = ctx;
+function render(vm: ViewModel, state: AppState): string {
     const k = vm.kpis;
     const rev = vm.revenue;
     const pts = rev.points;
@@ -230,15 +218,17 @@ export default {
         </main>
       </div>
     </div>`;
-  },
+}
 
-  mount(root, vm) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+  // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
+  const root = rootEl as any;
     const n = vm.revenue.points.length;
     const max = niceMax(vm.revenue.max * 1.04);
     attachLineHover(root.querySelector('.tm-chartwrap'), vm.revenue.points,
       { x0: 52, x1: 886, y0: 18, y1: 252, w: 900, h: 300, yMax: max, yMin: 0 },
       p => {
-        const d = p.prev ? (p.v - p.prev) / p.prev * 100 : null;
+        const d = p.prev ? (p.v - p.prev) / p.prev * 100 : 0;
         return `<div class="tt-date">${p.full}</div>
           <div class="tt-row"><span class="tt-label">REV</span><span class="tt-val">${fmtMoney(p.v)}</span></div>
           ${p.prev != null ? `<div class="tt-row"><span class="tt-label">PREV</span><span class="tt-val">${fmtMoney(p.prev)}</span></div>
@@ -259,5 +249,21 @@ export default {
     tick();
     const id = setInterval(tick, 1000);
     setTimeout(() => clearInterval(id), 600000);
-  },
-};
+}
+
+/* ---------------- React-обёртка ----------------
+   Разметка темы — та же строка, что в v1: визуальная верность 1:1.
+   React отвечает за монтирование, жизненный цикл и code-splitting. */
+export default function Theme({ vm, state, actions }: ThemeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.innerHTML = render(vm, state);
+    return mount(root, vm, state);
+  });
+
+  void actions;
+  return <div ref={ref} />;
+}

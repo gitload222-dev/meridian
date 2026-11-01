@@ -6,7 +6,7 @@ import re
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FONT_DIR = os.path.join(ROOT, "assets", "fonts")
+FONT_DIR = os.path.join(ROOT, "public", "assets", "fonts")
 os.makedirs(FONT_DIR, exist_ok=True)
 
 FAMILIES = [

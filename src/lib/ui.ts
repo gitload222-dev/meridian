@@ -1,9 +1,8 @@
-/* ============================================================
-   MERIDIAN · shared UI fragments
-   ============================================================ */
-import { RANGES, SEGMENTS, fmtDelta } from './data.js';
+/* MERIDIAN · shared UI fragments (typed port) */
+import { RANGES, SEGMENTS, fmtDelta } from './data';
+import type { Account, Kpi, AppState } from './data';
 
-export const ICONS = {
+export const ICONS: Record<string, string> = {
   search: '<circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2 20 20"/>',
   close: '<path d="M5 5l14 14M19 5 5 19"/>',
   up: '<path d="M6 15 12 9l6 6"/>',
@@ -45,7 +44,7 @@ export const ICONS = {
   wave: '<path d="M2 12c2.5 0 2.5-5 5-5s2.5 10 5 10 2.5-10 5-10 2.5 5 5 5"/>',
 };
 
-export function icon(name, size = 18, cls = '') {
+export function icon(name: string, size = 18, cls = '') {
   return `<svg class="ico ${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 }
 
@@ -58,7 +57,7 @@ export function logo(size = 26, cls = '') {
   </svg>`;
 }
 
-export function delta(kpi, opts = {}) {
+export function delta(kpi: Kpi, opts: { cls?: string; size?: number } = {}) {
   const good = kpi.good;
   return `<span class="delta ${good ? 'is-good' : 'is-bad'} ${opts.cls || ''}">
     ${icon(good ? 'arrowUpRight' : 'arrowDownRight', opts.size || 13)}
@@ -66,25 +65,25 @@ export function delta(kpi, opts = {}) {
   </span>`;
 }
 
-export function rangeControl(prefix, state) {
+export function rangeControl(prefix: string, state: AppState) {
   return `<div class="${prefix}-ranges ctl-range" role="group" aria-label="Период">
     ${RANGES.map(r => `<button class="ctl ${state.range === r.id ? 'is-on' : ''}" data-range="${r.id}" aria-pressed="${state.range === r.id}">${r.label}</button>`).join('')}
   </div>`;
 }
 
-export function rangeShort(prefix, state) {
+export function rangeShort(prefix: string, state: AppState) {
   return `<div class="${prefix}-ranges ctl-range" role="group" aria-label="Период">
     ${RANGES.map(r => `<button class="ctl ${state.range === r.id ? 'is-on' : ''}" data-range="${r.id}" aria-pressed="${state.range === r.id}">${r.short}</button>`).join('')}
   </div>`;
 }
 
-export function segmentControl(prefix, state, { short = false } = {}) {
+export function segmentControl(prefix: string, state: AppState, { short = false }: { short?: boolean } = {}) {
   return `<div class="${prefix}-segments ctl-segments" role="group" aria-label="Сегмент">
     ${SEGMENTS.map(s => `<button class="ctl ${state.segment === s.id ? 'is-on' : ''}" data-segment="${s.id}" aria-pressed="${state.segment === s.id}">${short ? s.short : s.label}</button>`).join('')}
   </div>`;
 }
 
-export function segmentSelect(prefix, state) {
+export function segmentSelect(prefix: string, state: AppState) {
   return `<label class="${prefix}-select">
     <span class="sr-only">Сегмент</span>
     <select data-segment-select>
@@ -94,23 +93,23 @@ export function segmentSelect(prefix, state) {
   </label>`;
 }
 
-export function healthColor(h) {
+export function healthColor(h: number) {
   return h >= 80 ? 'var(--good)' : h >= 65 ? 'var(--warn, #d9a441)' : 'var(--bad)';
 }
 
-export function avatar(a, cls = '') {
+export function avatar(a: Account, cls = '') {
   return `<span class="avatar ${cls}" style="--av:${a.color}" aria-hidden="true">${a.initials}</span>`;
 }
 
-export function pctDelta(v) { return fmtDelta(v); }
+export function pctDelta(v: number) { return fmtDelta(v); }
 
-export function tinyBars(values, cls = '') {
+export function tinyBars(values: number[], cls = '') {
   const max = Math.max(...values);
   return `<span class="tiny-bars ${cls}" aria-hidden="true">${values.map(v =>
     `<i style="height:${Math.max(8, Math.round(v / max * 100))}%"></i>`).join('')}</span>`;
 }
 
-export function countUp(el, target, formatter, duration = 900) {
+export function countUp(el: HTMLElement | null | undefined, target: number, formatter: (v: number) => string, duration = 900) {
   if (!el) return;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     el.textContent = formatter(target);
@@ -127,7 +126,7 @@ export function countUp(el, target, formatter, duration = 900) {
   requestAnimationFrame(frame);
 }
 
-export function themeButton(prefix, themeName) {
+export function themeButton(prefix: string, themeName: string) {
   return `<button class="${prefix}-concept" data-theme-open aria-label="Сменить визуальную концепцию">
     <span class="concept-dot"></span>
     <span class="concept-label">${themeName}</span>

@@ -1,30 +1,21 @@
+import { useEffect, useRef } from 'react';
+import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate, monthYear } from '../lib/data';
+import type { ViewModel, AppState } from '../lib/data';
+import type { ThemeProps } from '../lib/themes';
+import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import '../styles/themes/swiss.css';
+
 /* ============================================================
    CONCEPT 03 · ШВЕЙЦАРСКИЙ / Grid & Ink
    International typographic style: paper, ink, one red.
    ============================================================ */
-import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta } from '../data.js';
-import { icon, rangeControl, segmentSelect, countUp } from '../ui.js';
-import { niceMax, attachBarHover, roundedBar } from '../charts.js';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
 
-const poster = `
-  <div class="p-sw-grid"></div>
-  <div class="p-sw-head"><span>MERIDIAN</span><span>№ 03 / 2026</span></div>
-  <div class="p-sw-red"></div>
-  <div class="p-sw-letter">A</div>
-  <div class="p-sw-data"><b>42,1</b><span>МЛН ₽<br>ВЫРУЧКА<br>30 ДНЕЙ</span></div>
-  <div class="p-sw-rule"></div>
-  <div class="p-sw-foot"><span>GRID &amp; INK</span><span>SWISS</span></div>`;
 
-export default {
-  id: 'swiss', num: '03', name: 'Швейцарский', en: 'Grid & Ink',
-  tagline: 'Бумага, линейки и один красный',
-  palette: ['#f4f1ea', '#111111', '#e2231a', '#8c887d'],
-  bg: '#f4f1ea', accent: '#e2231a', poster,
-
-  render(vm, ctx) {
-    const { state } = ctx;
+function render(vm: ViewModel, state: AppState): string {
     const k = vm.kpis;
     const rev = vm.revenue;
     const pts = rev.points;
@@ -231,9 +222,11 @@ export default {
         </footer>
       </main>
     </div>`;
-  },
+}
 
-  mount(root, vm) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+  // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
+  const root = rootEl as any;
     attachBarHover(root, '.sw-bar', i => {
       const p = vm.revenue.points[Number(i)];
       const d = p.prev ? (p.v - p.prev) / p.prev * 100 : null;
@@ -249,5 +242,21 @@ export default {
       const kind = el.dataset.kind;
       countUp(el, Number(el.dataset.count), v => kind === 'money' ? fmtMoney(v) : fmtInt(v), 950);
     });
-  },
-};
+}
+
+/* ---------------- React-обёртка ----------------
+   Разметка темы — та же строка, что в v1: визуальная верность 1:1.
+   React отвечает за монтирование, жизненный цикл и code-splitting. */
+export default function Theme({ vm, state, actions }: ThemeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.innerHTML = render(vm, state);
+    return mount(root, vm, state);
+  });
+
+  void actions;
+  return <div ref={ref} />;
+}

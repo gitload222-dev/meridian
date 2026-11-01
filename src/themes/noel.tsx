@@ -1,25 +1,19 @@
+import { useEffect, useRef } from 'react';
+import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate, monthYear } from '../lib/data';
+import type { ViewModel, AppState } from '../lib/data';
+import type { ThemeProps } from '../lib/themes';
+import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import '../styles/themes/noel.css';
+
 /* ============================================================
    CONCEPT 02 · СОЧЕЛЬНИК / Noël
    Warm winter. Paper, candlelight, snow, an advent calendar.
    ============================================================ */
-import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, longDate } from '../data.js';
-import { icon, logo, rangeControl, segmentSelect, avatar, countUp } from '../ui.js';
-import { linePath, areaPath, sparkPath, niceMax, attachLineHover } from '../charts.js';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
 
-const poster = `
-  <div class="p-noel-stars"></div>
-  <div class="p-noel-moon"></div>
-  <div class="p-noel-hills"><i></i><i></i></div>
-  <div class="p-noel-pines"><i></i><i></i><i></i><i></i></div>
-  <div class="p-noel-cabin"><span class="w1"></span><span class="w2"></span></div>
-  <div class="p-noel-title">Тихо<br><em>идёт снег</em></div>
-  <div class="p-noel-snow">${Array.from({ length: 14 }, (_, i) => {
-    const x = (i * 37) % 100, s = 1.2 + (i % 3) * 0.7, d = 5 + (i % 5), delay = -(i * 0.7);
-    return `<i style="--x:${x}%;--s:${s}px;--d:${d}s;--delay:${delay}s"></i>`;
-  }).join('')}</div>
-  <div class="p-noel-foot">СОЧЕЛЬНИК · 02</div>`;
 
 function snowLayer(count = 34) {
   let out = '';
@@ -35,24 +29,17 @@ function snowLayer(count = 34) {
   return `<div class="nl-snow" aria-hidden="true">${out}</div>`;
 }
 
-function daysToNewYear(today) {
+function daysToNewYear(today: Date) {
   const ny = new Date(today.getFullYear() + 1, 0, 1);
-  return Math.ceil((ny - today) / 86400000);
+  return Math.ceil((ny.getTime() - today.getTime()) / 86400000);
 }
 
-function candle(v, max) {
+function candle(v: number, max: number) {
   const h = Math.max(10, Math.round(v / max * 100));
   return `<span class="nl-candle" style="--h:${h}%"><i></i></span>`;
 }
 
-export default {
-  id: 'noel', num: '02', name: 'Сочельник', en: 'Noël', 
-  tagline: 'Тёплый свет, снег и бумага',
-  palette: ['#0e2a22', '#1f4a38', '#e0a35e', '#f7efe0'],
-  bg: '#0c241d', accent: '#e0a35e', poster,
-
-  render(vm, ctx) {
-    const { state } = ctx;
+function render(vm: ViewModel, state: AppState): string {
     const k = vm.kpis;
     const rev = vm.revenue;
     const pts = rev.points;
@@ -309,9 +296,11 @@ export default {
         </footer>
       </main>
     </div>`;
-  },
+}
 
-  mount(root, vm, ctx) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+  // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
+  const root = rootEl as any;
     const rev = vm.revenue;
     const n = rev.points.length;
     const max = niceMax(rev.max * 1.08);
@@ -341,5 +330,21 @@ export default {
         b.classList.add('is-on');
       });
     });
-  },
-};
+}
+
+/* ---------------- React-обёртка ----------------
+   Разметка темы — та же строка, что в v1: визуальная верность 1:1.
+   React отвечает за монтирование, жизненный цикл и code-splitting. */
+export default function Theme({ vm, state, actions }: ThemeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.innerHTML = render(vm, state);
+    return mount(root, vm, state);
+  });
+
+  void actions;
+  return <div ref={ref} />;
+}

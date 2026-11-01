@@ -1,40 +1,22 @@
+import { useEffect, useRef } from 'react';
+import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate, monthYear } from '../lib/data';
+import type { ViewModel, AppState } from '../lib/data';
+import type { ThemeProps } from '../lib/themes';
+import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import '../styles/themes/orbital.css';
+
 /* ============================================================
    CONCEPT 10 · ОРБИТА / Orbital
    Mission-control telemetry: a radial flight instrument, orbital
    rings, star field and a signal trace. Cold, precise, spacious.
    ============================================================ */
-import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, longDate } from '../data.js';
-import { icon, logo, countUp } from '../ui.js';
-import { niceMax, linePath, attachLineHover, arcPath, polar } from '../charts.js';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
 
-const poster = `
-  <div class="p-or-stars"></div>
-  <svg class="p-or-art" viewBox="0 0 240 120">
-    <g fill="none" stroke="#7fe3ff">
-      <ellipse cx="120" cy="60" rx="96" ry="30" stroke-opacity=".28"/>
-      <ellipse cx="120" cy="60" rx="68" ry="21" stroke-opacity=".45" stroke-dasharray="1 3"/>
-      <ellipse cx="120" cy="60" rx="40" ry="12" stroke-opacity=".3"/>
-      <circle cx="120" cy="60" r="9" stroke-opacity=".9" stroke-width="1.4"/>
-      <path d="M120,51v18M111,60h18" stroke-opacity=".55"/>
-      <circle cx="196" cy="47" r="2.6" fill="#8ff0e2" stroke="none"/>
-      <circle cx="62" cy="72" r="2" fill="#7fe3ff" stroke="none"/>
-      <path d="M120,60 L196,47" stroke-opacity=".25" stroke-dasharray="1 2"/>
-    </g>
-  </svg>
-  <div class="p-or-hud">ORBITAL · TELEMETRY</div>
-  <div class="p-or-type">ОРБИТА</div>
-  <div class="p-or-status">● LINK STABLE · ALT 042.1</div>`;
 
-export default {
-  id: 'orbital', num: '10', name: 'Орбита', en: 'Orbital',
-  tagline: 'Пульт управления выручкой',
-  palette: ['#050a14', '#0d1b2e', '#7fe3ff', '#8ff0e2'],
-  bg: '#050a14', accent: '#7fe3ff', poster,
-
-  render(vm, ctx) {
-    const { state } = ctx;
+function render(vm: ViewModel, state: AppState): string {
     const k = vm.kpis;
     const rev = vm.revenue;
     const pts = rev.points;
@@ -362,9 +344,11 @@ export default {
         </footer>
       </main>
     </div>`;
-  },
+}
 
-  mount(root, vm) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+  // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
+  const root = rootEl as any;
     const max = niceMax(vm.revenue.max * 1.08);
     const tip = p => `<div class="tt-date">${p.full}</div>
         <div class="tt-row"><span class="tt-label">Выручка</span><span class="tt-val">${fmtMoney(p.v)}</span></div>
@@ -379,5 +363,21 @@ export default {
       const fmt = v => kind === 'money' ? fmtMoney(v) : kind === 'int' ? fmtInt(v) : fmtPct(v);
       countUp(el, Number(el.dataset.count), fmt, 1000);
     });
-  },
-};
+}
+
+/* ---------------- React-обёртка ----------------
+   Разметка темы — та же строка, что в v1: визуальная верность 1:1.
+   React отвечает за монтирование, жизненный цикл и code-splitting. */
+export default function Theme({ vm, state, actions }: ThemeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.innerHTML = render(vm, state);
+    return mount(root, vm, state);
+  });
+
+  void actions;
+  return <div ref={ref} />;
+}

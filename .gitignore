@@ -4,3 +4,8 @@ Thumbs.db
 *.png
 !assets/**/*.png
 /tmp/
+
+# Vite / Node
+node_modules/
+dist/
+.vite/

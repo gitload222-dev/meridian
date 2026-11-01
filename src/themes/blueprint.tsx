@@ -1,35 +1,23 @@
+import { useEffect, useRef } from 'react';
+import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate, monthYear } from '../lib/data';
+import type { ViewModel, AppState } from '../lib/data';
+import type { ThemeProps } from '../lib/themes';
+import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import '../styles/themes/blueprint.css';
+
 /* ============================================================
    CONCEPT 08 · ЧЕРТЁЖ / Blueprint
    An engineering drawing of the revenue system: dimension lines,
    hatching, schedules, title block. No shadows, only linework.
    ============================================================ */
-import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, longDate } from '../data.js';
-import { icon, logo, countUp } from '../ui.js';
-import { niceMax, linePath, attachLineHover, attachBarHover } from '../charts.js';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
 
-const poster = `
-  <div class="p-bp-grid"></div>
-  <div class="p-bp-frame"></div>
-  <svg class="p-bp-art" viewBox="0 0 240 120">
-    <g fill="none" stroke="#d8ecff" stroke-width="1">
-      <path d="M12,96 L52,96 L60,44 L74,44 L84,88 L104,88 L114,22 L128,22 L138,78 L158,78 L168,52 L182,52 L192,86 L228,86" stroke-width="1.6"/>
-      <path d="M12,96 L228,96" stroke-opacity=".4"/>
-      <path d="M12,96 L12,104 M228,96 L228,104" stroke-opacity=".5"/>
-      <path d="M12,100 L228,100" stroke-opacity=".3" stroke-dasharray="2 3"/>
-      <circle cx="114" cy="22" r="3" fill="#d8ecff" stroke="none"/>
-      <path d="M114,22 L146,10 L196,10" stroke-opacity=".55" stroke-dasharray="2 3"/>
-      <path d="M52,96 L52,20 M52,20 L46,26 M52,20 L58,26" stroke-opacity=".35"/>
-      <text x="48" y="18" font-family="JetBrains Mono, monospace" font-size="7" fill="#bcdcff" text-anchor="end">H</text>
-    </g>
-  </svg>
-  <div class="p-bp-num">08</div>
-  <div class="p-bp-stamp">SHEET 08 / REV C</div>
-  <div class="p-bp-note">проверить допуск →</div>`;
 
 /* dashed dimension line with arrows */
-function dim(x1, y1, x2, y2, label, opts = {}) {
+function dim(x1, y1, x2, y2, label, opts: Record<string, any> = {}) {
   const { size = 5, anchor = 'middle', dx = 0, dy = -6, color = 'var(--bp-dim)' } = opts;
   return `<g stroke="${color}" fill="none" stroke-width=".9">
     <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>
@@ -49,14 +37,7 @@ function vdim(x, ya, yb, label) {
   <text transform="rotate(-90 ${x + 11} ${(ya + yb) / 2})" x="${x + 11}" y="${(ya + yb) / 2 + 3}" fill="var(--bp-dim)" font-family="JetBrains Mono, monospace" font-size="8.5" text-anchor="middle" letter-spacing=".08em" stroke="#0a2c55" stroke-width="4" paint-order="stroke" stroke-linejoin="round">${label}</text>`;
 }
 
-export default {
-  id: 'blueprint', num: '08', name: 'Чертёж', en: 'Blueprint',
-  tagline: 'Инженерный чертёж системы выручки',
-  palette: ['#0a2c55', '#dceaf7', '#7fd3ff', '#ffd08a'],
-  bg: '#0a2c55', accent: '#7fd3ff', poster,
-
-  render(vm, ctx) {
-    const { state } = ctx;
+function render(vm: ViewModel, state: AppState): string {
     const k = vm.kpis;
     const rev = vm.revenue;
     const pts = rev.points;
@@ -369,9 +350,11 @@ export default {
         </footer>
       </main>
     </div>`;
-  },
+}
 
-  mount(root, vm) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+  // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
+  const root = rootEl as any;
     const max = niceMax(vm.revenue.max * 1.12);
     const tip = p => `<div class="tt-date">${p.full}</div>
         <div class="tt-row"><span class="tt-label">Выручка</span><span class="tt-val">${fmtMoney(p.v)}</span></div>
@@ -387,5 +370,21 @@ export default {
       const fmt = v => kind === 'money' ? fmtMoney(v) : kind === 'int' ? fmtInt(v) : fmtPct(v);
       countUp(el, Number(el.dataset.count), fmt, 950);
     });
-  },
-};
+}
+
+/* ---------------- React-обёртка ----------------
+   Разметка темы — та же строка, что в v1: визуальная верность 1:1.
+   React отвечает за монтирование, жизненный цикл и code-splitting. */
+export default function Theme({ vm, state, actions }: ThemeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.innerHTML = render(vm, state);
+    return mount(root, vm, state);
+  });
+
+  void actions;
+  return <div ref={ref} />;
+}

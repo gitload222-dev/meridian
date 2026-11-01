@@ -8,12 +8,11 @@
 /assets/fonts.css
   Cache-Control: public, max-age=86400
 
-/css/*
-  Cache-Control: public, max-age=3600
+# Собранные чанки Vite содержат хеш в имени → их можно кешировать навсегда.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
 
-/js/*
-  Cache-Control: public, max-age=3600
-
+# index.html всегда проверяем — он ссылается на актуальные хеши.
 /
   Cache-Control: public, max-age=0, must-revalidate
 

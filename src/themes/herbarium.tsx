@@ -1,30 +1,36 @@
+import { useEffect, useRef } from 'react';
+import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate, monthYear } from '../lib/data';
+import type { ViewModel, AppState } from '../lib/data';
+import type { ThemeProps } from '../lib/themes';
+import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import '../styles/themes/herbarium.css';
+
 /* ============================================================
    CONCEPT 06 · ГЕРБАРИЙ / Field Herbarium
    A botanical field notebook: cream paper, specimen plates,
    ink-green linework, handwritten annotations.
    ============================================================ */
-import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, monthYear } from '../data.js';
-import { icon, countUp } from '../ui.js';
-import { niceMax, linePath, attachLineHover } from '../charts.js';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
 
 /* procedural botanical plate ------------------------------------------------ */
-function plant(vm, seed = 3) {
+function plant(vm: ViewModel, seed = 3) {
   let r = seed * 9301 + 49297;
   const rnd = () => { r = (r * 9301 + 49297) % 233280; return r / 233280; };
 
   const H = 420, baseY = H - 26;
-  const stemPts = [];
+  const stemPts: [number, number][] = [];
   for (let i = 0; i <= 30; i++) {
     const t = i / 30;
     const x = 208 + Math.sin(t * 3.4 + 0.35) * 30 * (1 - t * 0.3) + t * 14;
     stemPts.push([x, baseY - t * (baseY - 62)]);
   }
-  const at = t => stemPts[Math.min(30, Math.max(0, Math.round(t * 30)))];
+  const at = (t: number): [number, number] => stemPts[Math.min(30, Math.max(0, Math.round(t * 30)))];
   const dStem = stemPts.map(([x, y], i) => (i === 0 ? `M${x.toFixed(1)},${y.toFixed(1)}` : `L${x.toFixed(1)},${y.toFixed(1)}`)).join(' ');
 
-  const leaves = [];
+  const leaves: any[] = [];
   const count = 11;
   for (let i = 0; i < count; i++) {
     const t = 0.12 + (i / count) * 0.8;
@@ -49,7 +55,7 @@ function plant(vm, seed = 3) {
     leaves.push({ d, tipX, tipY, midX, midY, veins, i, scale, ang: Math.atan2(dy, dx) });
   }
 
-  const flowers = [];
+  const flowers: any[] = [];
   for (let i = 0; i < 7; i++) {
     const [x, y] = at(0.9 + i * 0.013);
     flowers.push({ x: x + (i - 3) * 9.5 + (rnd() - .5) * 3, y: y - 26 - Math.abs(i - 3) * 4.5, r: 4.4 + (i % 3) * 0.9 });
@@ -110,30 +116,8 @@ function plant(vm, seed = 3) {
   </svg>`;
 }
 
-const poster = `
-  <div class="p-hb-grain"></div>
-  <svg class="p-hb-plant" viewBox="0 0 100 130">
-    <path d="M50,124 C46,92 54,64 50,22" stroke="#3f5741" stroke-width="1.4" fill="none"/>
-    ${[0,1,2,3,4,5].map(i => {
-      const y = 30 + i * 15, side = i % 2 ? 1 : -1;
-      return `<path d="M${50 + (i % 2 ? 2 : -2)},${y} Q${50 + side * 16},${y - 9} ${50 + side * 26},${y - 16} Q${50 + side * 12},${y - 4} ${50 + (i % 2 ? 2 : -2)},${y}" fill="#7d9270" fill-opacity=".55" stroke="#3f5741" stroke-width=".8"/>`;
-    }).join('')}
-    <circle cx="50" cy="20" r="3.4" fill="#c2674b" fill-opacity=".6"/>
-  </svg>
-  <div class="p-hb-type">Гер-<br>барий</div>
-  <div class="p-hb-latin">REVENUE · SPECIMEN 06</div>
-  <div class="p-hb-rule"></div>
-  <div class="p-hb-num">42,1</div>
-  <div class="p-hb-foot"><span>ПОЛЕВОЙ ЖУРНАЛ</span><span>06</span></div>`;
 
-export default {
-  id: 'herbarium', num: '06', name: 'Гербарий', en: 'Field Herbarium',
-  tagline: 'Полевой журнал и ботанические пластины',
-  palette: ['#f5efe1', '#2f3e2e', '#c2674b', '#8b9a80'],
-  bg: '#f5efe1', accent: '#c2674b', poster,
-
-  render(vm, ctx) {
-    const { state } = ctx;
+function render(vm: ViewModel, state: AppState): string {
     const k = vm.kpis;
     const rev = vm.revenue;
     const pts = rev.points;
@@ -335,9 +319,11 @@ export default {
         </footer>
       </main>
     </div>`;
-  },
+}
 
-  mount(root, vm) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+  // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
+  const root = rootEl as any;
     const max = niceMax(vm.revenue.max * 1.06);
     attachLineHover(root.querySelector('.hb-chartwrap'), vm.revenue.points,
       { x0: 34, x1: 690, y0: 16, y1: 172, w: 700, h: 210, yMax: max, yMin: 0 },
@@ -349,5 +335,21 @@ export default {
       const fmt = v => kind === 'money' ? fmtMoney(v) : kind === 'int' ? fmtInt(v) : fmtPct(v);
       countUp(el, Number(el.dataset.count), fmt, 950);
     });
-  },
-};
+}
+
+/* ---------------- React-обёртка ----------------
+   Разметка темы — та же строка, что в v1: визуальная верность 1:1.
+   React отвечает за монтирование, жизненный цикл и code-splitting. */
+export default function Theme({ vm, state, actions }: ThemeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.innerHTML = render(vm, state);
+    return mount(root, vm, state);
+  });
+
+  void actions;
+  return <div ref={ref} />;
+}

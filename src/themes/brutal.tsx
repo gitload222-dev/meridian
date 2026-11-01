@@ -1,29 +1,22 @@
+import { useEffect, useRef } from 'react';
+import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate, monthYear } from '../lib/data';
+import type { ViewModel, AppState } from '../lib/data';
+import type { ThemeProps } from '../lib/themes';
+import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import '../styles/themes/brutal.css';
+
 /* ============================================================
    CONCEPT 07 · БЕТОН / Concrete & Acid
    Neo-brutalist grid: hard edges, offset shadows, acid accent,
    oversized numerals, mono labels.
    ============================================================ */
-import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta } from '../data.js';
-import { icon, countUp } from '../ui.js';
-import { niceMax, attachBarHover } from '../charts.js';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
 
-const poster = `
-  <div class="p-br-grid"></div>
-  <div class="p-br-block">42,1<small>МЛН ₽</small></div>
-  <div class="p-br-acid">+2%</div>
-  <div class="p-br-meta">ВЫРУЧКА<br>30 ДНЕЙ<br>2026</div>
-  <div class="p-br-barcode"></div>`;
 
-export default {
-  id: 'brutal', num: '07', name: 'Бетон', en: 'Concrete & Acid',
-  tagline: 'Жёсткая сетка и кислотный акцент',
-  palette: ['#d7d4cb', '#111111', '#d7ff3f', '#6f6c63'],
-  bg: '#d7d4cb', accent: '#c9f227', poster,
-
-  render(vm, ctx) {
-    const { state } = ctx;
+function render(vm: ViewModel, state: AppState): string {
     const k = vm.kpis;
     const rev = vm.revenue;
     const pts = rev.points;
@@ -209,9 +202,11 @@ export default {
         </footer>
       </main>
     </div>`;
-  },
+}
 
-  mount(root, vm) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+  // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
+  const root = rootEl as any;
     attachBarHover(root, '.br-bar', i => {
       const p = vm.revenue.points[Number(i)];
       return `<div class="tt-date">${p.full}</div>
@@ -222,5 +217,21 @@ export default {
       const fmt = v => kind === 'money' ? fmtMoney(v) : kind === 'int' ? fmtInt(v) : fmtPct(v);
       countUp(el, Number(el.dataset.count), fmt, 900);
     });
-  },
-};
+}
+
+/* ---------------- React-обёртка ----------------
+   Разметка темы — та же строка, что в v1: визуальная верность 1:1.
+   React отвечает за монтирование, жизненный цикл и code-splitting. */
+export default function Theme({ vm, state, actions }: ThemeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.innerHTML = render(vm, state);
+    return mount(root, vm, state);
+  });
+
+  void actions;
+  return <div ref={ref} />;
+}

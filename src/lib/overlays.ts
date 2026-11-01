@@ -1,14 +1,20 @@
-/* ============================================================
-   MERIDIAN · overlays: concept studio, command palette, drawer
-   ============================================================ */
-import { fmtMoney, fmtInt, fmtPct, fmtDelta, SEGMENTS, RANGES } from './data.js';
-import { icon, logo, avatar } from './ui.js';
-import { sparkPath } from './charts.js';
+/* MERIDIAN · overlays: concept studio, command palette, drawer (typed port) */
+import { fmtMoney, fmtInt, fmtPct, fmtDelta, SEGMENTS, RANGES } from './data';
+import type { Account } from './data';
+import type { ThemeMeta } from './themes';
+import { icon, logo, avatar } from './ui';
+import { sparkPath } from './charts';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+export interface PaletteItem {
+  key: string; group: string; icon: string; title: string; meta: string; hint?: string;
+  run: { type: string; id?: string };
+}
+export interface PaletteGroup { label: string; items: PaletteItem[] }
+
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 
 /* ---------------- concept studio ---------------- */
-export function studioHTML(themes, activeId) {
+export function studioHTML(themes: ThemeMeta[], activeId: string) {
   const cards = themes.map(t => `
     <button class="concept-card ${t.id === activeId ? 'is-active' : ''}" data-theme-pick="${t.id}" aria-pressed="${t.id === activeId}">
       <div class="concept-poster poster--${t.id}">
@@ -69,10 +75,10 @@ export function paletteHTML() {
   </div>`;
 }
 
-export function paletteResults(query, themes, accounts) {
+export function paletteResults(query: string, themes: ThemeMeta[], accounts: Account[]): PaletteGroup[] {
   const q = query.trim().toLowerCase();
-  const groups = [];
-  const match = (...vals) => !q || vals.join(' ').toLowerCase().includes(q);
+  const groups: PaletteGroup[] = [];
+  const match = (...vals: string[]) => !q || vals.join(' ').toLowerCase().includes(q);
 
   const themeItems = themes
     .filter(t => match(t.name, t.en, t.id, t.tagline, t.num))
@@ -117,7 +123,7 @@ export function paletteResults(query, themes, accounts) {
   return groups;
 }
 
-export function paletteListHTML(groups, activeIndex = 0) {
+export function paletteListHTML(groups: PaletteGroup[], activeIndex = 0) {
   if (!groups.length) {
     return `<div class="palette-empty">${icon('search', 22)}<p>Ничего не найдено</p><span>Попробуйте «Квант», «30 дней» или «Терминал»</span></div>`;
   }
@@ -139,7 +145,7 @@ export function paletteListHTML(groups, activeIndex = 0) {
 /* ---------------- account drawer ---------------- */
 const EVENT_ICON = { 'договор': 'wallet', 'продукт': 'layers', 'активность': 'activity', 'встреча': 'users', 'риск': 'bell', 'биллинг': 'wallet' };
 
-export function drawerHTML(a, ctx) {
+export function drawerHTML(a: Account, ctx: unknown) {
   const gid = 'dr-grad-' + a.id;
   const spark = sparkPath(a.spark, 400, 78, 6, 0.2);
   const healthTone = a.health >= 80 ? 'good' : a.health >= 65 ? 'warn' : 'bad';
@@ -187,7 +193,7 @@ export function drawerHTML(a, ctx) {
     <div class="drawer-events">
       <div class="drawer-sec-head"><span>Последние события</span><b>${a.events.length}</b></div>
       ${a.events.map(e => `<div class="dr-event">
-        <span class="dr-event-ico">${icon(EVENT_ICON[e.kind] || 'activity', 14)}</span>
+        <span class="dr-event-ico">${icon((EVENT_ICON as Record<string, string>)[e.kind] || 'activity', 14)}</span>
         <span class="dr-event-title">${esc(e.title)}</span>
         <span class="dr-event-days">${e.days} дн.</span>
       </div>`).join('')}
@@ -200,7 +206,7 @@ export function drawerHTML(a, ctx) {
 }
 
 /* ---------------- attention popover ---------------- */
-export function attentionHTML(accounts) {
+export function attentionHTML(accounts: Account[]) {
   const rows = accounts.map(a => {
     const tone = a.health < 70 ? 'is-risk' : 'is-watch';
     return `<button class="at-item" data-account-id="${a.id}">

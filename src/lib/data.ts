@@ -6,14 +6,58 @@
 const DAY = 86_400_000;
 const HISTORY = 800;
 
-export const RANGES = [
+export interface RangeDef { id: string; label: string; short: string; days: number; tick: number }
+export interface SegmentDef { id: string; label: string; short: string; share: number; accounts: number; nrr: number; churn: number; conv: number; funnel: number }
+export interface Account {
+  id: string; name: string; segment: string; region: string; mrr: number; growth: number;
+  health: number; owner: string; since: number; plan: string; seats: number; usage: number;
+  color: string; initials: string; spark: number[]; email: string;
+  events: { title: string; kind: string; days: number; i: number }[];
+  ltv: number; sinceLabel: string;
+}
+export interface Kpi {
+  id: string; label: string; value: string; raw: number;
+  delta: number; deltaLabel: string; note: string; good: boolean;
+}
+export interface ChartPoint {
+  i: number; date: Date; label: string; full: string; weekday: string;
+  v: number; prev: number | null;
+}
+export interface ViewModel {
+  range: RangeDef; segment: SegmentDef; segId: string;
+  rangeLabel: string; compareLabel: string; today: Date; updated: Date;
+  kpis: Record<string, Kpi>; kpiList: Kpi[];
+  revenue: {
+    total: number; prevTotal: number; delta: number;
+    points: ChartPoint[]; max: number; min: number; avg: number;
+    peak: ChartPoint; spark: number[]; accountSpark: number[];
+  };
+  mrr: number;
+  accounts: Account[]; allAccounts: Account[]; accountCount: number;
+  channels: { id: string; name: string; share: number; delta: number; value: number; prevShare: number }[];
+  regions: { name: string; share: number; delta: number; value: number }[];
+  funnel: { id: string; label: string; value: number; rate: number }[];
+  cohorts: { months: string[]; values: (number | null)[][] };
+  health: { healthy: number; watch: number; risk: number };
+  topMovers: Account[]; riskAccounts: Account[];
+  goals: { revenue: number; accounts: number; nrr: number };
+  liveUsers: number; hours: number[];
+  activity: { sessions: number; trialStarts: number };
+  getAccount(id: string): Account | null;
+}
+export interface AppState {
+  theme: string; range: string; segment: string; search: string;
+  sort: { key: string; dir: string }; compare: boolean;
+}
+
+export const RANGES: RangeDef[] = [
   { id: '7d',  label: '7 дней',  short: '7Д',  days: 7,   tick: 1 },
   { id: '30d', label: '30 дней', short: '30Д', days: 30,  tick: 1 },
   { id: '90d', label: '90 дней', short: '90Д', days: 90,  tick: 1 },
   { id: '12m', label: '12 месяцев', short: '12М', days: 365, tick: 7 },
 ];
 
-export const SEGMENTS = [
+export const SEGMENTS: SegmentDef[] = [
   { id: 'all',        label: 'Все сегменты', short: 'Все',        share: 1,    accounts: 1326, nrr: 112.4, churn: 1.9, conv: 4.8, funnel: 1 },
   { id: 'enterprise', label: 'Enterprise',   short: 'Enterprise', share: 0.52, accounts: 152,  nrr: 118.6, churn: 0.7, conv: 6.2, funnel: 0.28 },
   { id: 'mid',        label: 'Mid-market',   short: 'Mid-market', share: 0.30, accounts: 392,  nrr: 111.2, churn: 1.6, conv: 5.1, funnel: 0.38 },
@@ -29,9 +73,9 @@ const nfInt = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 const nf1 = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const nf2 = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export function fmtInt(v) { return nfInt.format(Math.round(v)); }
+export function fmtInt(v: number) { return nfInt.format(Math.round(v)); }
 
-export function fmtMoney(v, opts = {}) {
+export function fmtMoney(v: number, opts: { full?: boolean } = {}) {
   const sign = v < 0 ? '−' : '';
   const a = Math.abs(v);
   if (opts.full || a < 10_000) return sign + nfInt.format(a) + ' ₽';
@@ -40,7 +84,7 @@ export function fmtMoney(v, opts = {}) {
   return sign + nf2.format(a / 1_000_000_000) + ' млрд ₽';
 }
 
-export function fmtMoneyShort(v) {
+export function fmtMoneyShort(v: number) {
   const a = Math.abs(v);
   const sign = v < 0 ? '−' : '';
   if (a >= 1_000_000_000) return sign + nf2.format(a / 1_000_000_000) + ' млрд';
@@ -49,39 +93,39 @@ export function fmtMoneyShort(v) {
   return sign + nfInt.format(a);
 }
 
-export function fmtPct(v, digits = 1) {
+export function fmtPct(v: number, digits = 1) {
   const f = digits === 0 ? nfInt : digits === 2 ? nf2 : nf1;
   return f.format(v) + '%';
 }
 
-export function fmtSigned(v, digits = 1) {
+export function fmtSigned(v: number, digits = 1) {
   const f = digits === 0 ? nfInt : digits === 2 ? nf2 : nf1;
   return (v > 0 ? '+' : v < 0 ? '−' : '') + f.format(Math.abs(v));
 }
 
-export function fmtDelta(v, digits = 1) {
+export function fmtDelta(v: number, digits = 1) {
   return fmtSigned(v, digits) + '%';
 }
 
-export function shortDate(d) {
+export function shortDate(d: Date) {
   return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
 }
-export function longDate(d) {
+export function longDate(d: Date) {
   return `${d.getDate()} ${MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}`;
 }
-export function monthYear(d) {
+export function monthYear(d: Date) {
   return `${MONTHS_NOM[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function startOfDay(d) {
+function startOfDay(d: Date) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
 }
-function addDays(d, n) { return new Date(d.getTime() + n * DAY); }
+function addDays(d: Date, n: number) { return new Date(d.getTime() + n * DAY); }
 
 /* deterministic RNG */
-function mulberry32(seed) {
+function mulberry32(seed: number) {
   let a = seed >>> 0;
   return function () {
     a |= 0; a = (a + 0x6D2B79F5) | 0;
@@ -101,7 +145,11 @@ const SEG_GEN = [
 ];
 
 /* ---------- daily series ---------- */
-const days = [];
+const days: {
+  t: number; date: Date; revenue: number; users: number; trials: number;
+  accounts: number; conversion: number; churn: number; nrr: number;
+  bySegment: Record<string, number>;
+}[] = [];
 const rngs = Object.fromEntries(SEG_GEN.map(s => [s.id, mulberry32(s.seed)]));
 const acctRngs = Object.fromEntries(SEG_GEN.map(s => [s.id, mulberry32(s.seed + 77)]));
 const metaRng = mulberry32(20261029);
@@ -113,7 +161,7 @@ for (let i = 0; i < HISTORY; i++) {
   const monthEnd = date.getDate() >= 27 ? 1.10 : date.getDate() <= 2 ? 1.04 : 1;
   const t = i / (HISTORY - 1);
 
-  const row = { t: i, date, revenue: 0, users: 0, trials: 0, accounts: 0, conversion: 0, churn: 0, nrr: 0, bySegment: {} };
+  const row = { t: i, date, revenue: 0, users: 0, trials: 0, accounts: 0, conversion: 0, churn: 0, nrr: 0, bySegment: {} as Record<string, number> };
 
   for (const s of SEG_GEN) {
     const r = rngs[s.id]();
@@ -136,7 +184,7 @@ for (let i = 0; i < HISTORY; i++) {
 }
 
 /* ---------- accounts ---------- */
-const ACCOUNT_SEED = [
+const ACCOUNT_SEED: [string, string, string, number, number, number, string, number, string, number][] = [
   ['Квант', 'enterprise', 'СНГ', 1_240_000, 18.4, 94, 'А. Волкова', 2019, 'Enterprise', 420],
   ['Northwind', 'enterprise', 'Европа', 980_000, 12.1, 91, 'М. Лебедев', 2018, 'Enterprise', 360],
   ['Атлас Групп', 'enterprise', 'СНГ', 862_000, 6.8, 87, 'И. Соколова', 2020, 'Enterprise', 280],
@@ -169,9 +217,9 @@ const ACCOUNT_SEED = [
 
 const ACCOUNT_COLORS = ['#5B8CFF', '#46C2A8', '#E8A33D', '#D96C8A', '#8A7BF0', '#4FB3D9', '#C07A4E', '#6FAE5B'];
 
-function accountEvents(name, seed) {
+function accountEvents(name: string, seed: number) {
   const r = mulberry32(seed);
-  const pool = [
+  const pool: [string, string, number][] = [
     ['Продлил подписку на 12 месяцев', 'договор', 2],
     ['Превысил лимит активных мест', 'продукт', 4],
     ['Открыл квартальный отчёт для совета', 'активность', 7],
@@ -186,10 +234,10 @@ function accountEvents(name, seed) {
     .slice(0, 5);
 }
 
-const accounts = ACCOUNT_SEED.map((a, i) => {
+const accounts: Account[] = ACCOUNT_SEED.map((a, i) => {
   const [name, segment, region, mrr, growth, health, owner, since, plan, seats] = a;
   const r = mulberry32(4000 + i * 37);
-  const spark = [];
+  const spark: number[] = [];
   let base = 0.72 + r() * 0.2;
   for (let k = 0; k < 24; k++) {
     base += (growth / 100) / 24 + (r() - 0.5) * 0.035;
@@ -211,12 +259,12 @@ const accounts = ACCOUNT_SEED.map((a, i) => {
 });
 
 /* ---------- helpers ---------- */
-function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
-function avg(arr) { return sum(arr) / arr.length; }
+function sum(arr: number[]) { return arr.reduce((a, b) => a + b, 0); }
+function avg(arr: number[]) { return sum(arr) / arr.length; }
 
-function sliceDays(daysN, segmentId) {
+function sliceDays(daysN: number, segmentId: string) {
   const seg = segmentId === 'all' ? null : segmentId;
-  const take = (start, count) => days.slice(start, start + count).map(d => ({
+  const take = (start: number, count: number) => days.slice(start, start + count).map(d => ({
     ...d,
     revenue: seg ? d.bySegment[seg] : d.revenue,
   }));
@@ -226,7 +274,7 @@ function sliceDays(daysN, segmentId) {
   return { current, previous };
 }
 
-function buildPoints(current, previous, tick, seg) {
+function buildPoints(current: typeof days, previous: typeof days, tick: number, seg: string | null): ChartPoint[] {
   if (tick === 1) {
     return current.map((d, i) => ({
       i, date: d.date, label: shortDate(d.date), full: longDate(d.date),
@@ -234,7 +282,7 @@ function buildPoints(current, previous, tick, seg) {
       v: d.revenue, prev: previous[i] ? previous[i].revenue : null,
     }));
   }
-  const points = [];
+  const points: ChartPoint[] = [];
   for (let i = 0; i < current.length; i += tick) {
     const chunk = current.slice(i, i + tick);
     const prevChunk = previous.slice(i, i + tick);
@@ -253,7 +301,7 @@ function buildPoints(current, previous, tick, seg) {
   return points;
 }
 
-function rangeLabel(daysN, rangeId) {
+function rangeLabel(daysN: number, rangeId: string) {
   const end = TODAY;
   const start = addDays(end, -(daysN - 1));
   if (rangeId === '12m') {
@@ -266,12 +314,12 @@ function rangeLabel(daysN, rangeId) {
   return `${start.getDate()} ${MONTHS_GEN[start.getMonth()]} — ${end.getDate()} ${MONTHS_GEN[end.getMonth()]}`;
 }
 
-function compareLabel(rangeId) {
-  return { '7d': 'к прошлой неделе', '30d': 'к прошлым 30 дням', '90d': 'к прошлому кварталу', '12m': 'к прошлому году' }[rangeId];
+function compareLabel(rangeId: string) {
+  return { '7d': 'к прошлой неделе', '30d': 'к прошлым 30 дням', '90d': 'к прошлому кварталу', '12m': 'к прошлому году' }[rangeId] || '';
 }
 
 /* ---------- view model ---------- */
-export function buildViewModel(state) {
+export function buildViewModel(state: AppState): ViewModel {
   const range = RANGES.find(r => r.id === state.range) || RANGES[1];
   const segment = SEGMENTS.find(s => s.id === state.segment) || SEGMENTS[0];
   const segId = segment.id;
@@ -287,7 +335,7 @@ export function buildViewModel(state) {
   // MRR — регулярная (подписочная) выручка в месяц: проекция текущего
   // календарного месяца на полный месяц × доля регулярной выручки сегмента.
   // Так MRR не совпадает с «выручкой за 30 дней» и корректно считает ARPA.
-  const RECURRING = { all: 0.78, enterprise: 0.87, mid: 0.78, startup: 0.63 };
+  const RECURRING: Record<string, number> = { all: 0.78, enterprise: 0.87, mid: 0.78, startup: 0.63 };
   const monthStart = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
   const prevMonthStart = new Date(TODAY.getFullYear(), TODAY.getMonth() - 1, 1);
   const daysInMonth = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 0).getDate();
@@ -299,8 +347,9 @@ export function buildViewModel(state) {
   const mrrPrev = prevMonthDays.length ? sum(prevMonthDays) / prevMonthDays.length * daysInPrev * recShare : sum(prev30) * recShare;
   const mrrDelta = mrrPrev ? (mrr - mrrPrev) / mrrPrev * 100 : 0;
 
-  const acctNow = days[days.length - 1].accounts * (segId === 'all' ? 1 : { enterprise: 0.115, mid: 0.296, startup: 0.589 }[segId]);
-  const acctPrev = current[0].accounts * (segId === 'all' ? 1 : { enterprise: 0.115, mid: 0.296, startup: 0.589 }[segId]);
+  const segAcctShare: Record<string, number> = { enterprise: 0.115, mid: 0.296, startup: 0.589 };
+  const acctNow = days[days.length - 1].accounts * (segId === 'all' ? 1 : segAcctShare[segId]);
+  const acctPrev = current[0].accounts * (segId === 'all' ? 1 : segAcctShare[segId]);
   const acctDelta = (acctNow - acctPrev) / acctPrev * 100;
 
   const conv = avg(current.map(d => d.conversion)) + (segment.conv - 4.8);
@@ -312,7 +361,7 @@ export function buildViewModel(state) {
   const arpa = mrr / Math.max(1, acctNow);
   const ltv = arpa / (churn / 100);
 
-  const kpis = {
+  const kpis: Record<string, Kpi> = {
     revenue: {
       id: 'revenue', label: 'Выручка', value: fmtMoney(revTotal), raw: revTotal,
       delta: revDelta, deltaLabel: fmtDelta(revDelta), note: compareLabel(state.range), good: revDelta >= 0,
@@ -342,6 +391,7 @@ export function buildViewModel(state) {
       delta: acctDelta ? -acctDelta * 0.6 : 0, deltaLabel: fmtDelta(-acctDelta * 0.6), note: 'к прошлому периоду', good: true,
     },
   };
+  void ltv;
   const kpiList = [kpis.revenue, kpis.mrr, kpis.accounts, kpis.nrr, kpis.conversion, kpis.churn, kpis.arpa];
 
   const chartMax = Math.max(...points.map(p => Math.max(p.v, p.prev || 0)));
@@ -378,7 +428,7 @@ export function buildViewModel(state) {
     { id: 'expansion', label: 'Расширение', value: Math.round(412 * fScale), rate: 1.5 },
   ];
 
-  const cohortBase = [
+  const cohortBase: (number | null)[][] = [
     [100, 71, 60, 54, 49, 46],
     [100, 73, 62, 55, 50, 47],
     [100, 74, 63, 57, 52, null],
@@ -386,7 +436,7 @@ export function buildViewModel(state) {
     [100, 77, 66, null, null, null],
     [100, 79, null, null, null, null],
   ];
-  const cohortMonths = [];
+  const cohortMonths: string[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(TODAY.getFullYear(), TODAY.getMonth() - i, 1);
     cohortMonths.push(MONTHS_NOM[d.getMonth()].slice(0, 3));
@@ -407,7 +457,7 @@ export function buildViewModel(state) {
   const dir = state.sort?.dir === 'asc' ? 1 : -1;
   list = [...list].sort((a, b) => {
     if (sortKey === 'name') return a.name.localeCompare(b.name, 'ru') * dir;
-    return ((a[sortKey] ?? 0) - (b[sortKey] ?? 0)) * dir;
+    return (((a as unknown as Record<string, number>)[sortKey] ?? 0) - ((b as unknown as Record<string, number>)[sortKey] ?? 0)) * dir;
   });
 
   const topMovers = [...accounts].sort((a, b) => b.growth - a.growth).slice(0, 4);
@@ -454,7 +504,7 @@ export function buildViewModel(state) {
   };
 }
 
-export function toCSV(rows) {
+export function toCSV(rows: Account[]) {
   const head = ['Аккаунт', 'Сегмент', 'Регион', 'MRR', 'Рост %', 'Здоровье', 'Владелец', 'План'];
   const body = rows.map(a => [a.name, a.segment, a.region, a.mrr, a.growth, a.health, a.owner, a.plan]);
   return [head, ...body].map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(',')).join('\n');

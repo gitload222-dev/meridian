@@ -1,32 +1,23 @@
+import { useEffect, useRef } from 'react';
+import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate, monthYear } from '../lib/data';
+import type { ViewModel, AppState } from '../lib/data';
+import type { ThemeProps } from '../lib/themes';
+import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import '../styles/themes/prism.css';
+
 /* ============================================================
    CONCEPT 05 · ПРИЗМА / Prism
    Iridescent bento. Mesh gradients, glass, chromatic type.
    ============================================================ */
-import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta } from '../data.js';
-import { icon, logo, countUp } from '../ui.js';
-import { niceMax, linePath, areaPath, attachLineHover, sparkPath, donutArcs, polar, arcPath } from '../charts.js';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
 
-const poster = `
-  <div class="p-pr-blur p1"></div>
-  <div class="p-pr-blur p2"></div>
-  <div class="p-pr-blur p3"></div>
-  <div class="p-pr-orb"></div>
-  <div class="p-pr-type">Prism</div>
-  <div class="p-pr-sub">SPECTRUM · 05</div>
-  <div class="p-pr-line"></div>`;
 
 const SPECTRUM = ['#ff6ec7', '#a78bfa', '#5eead4', '#fbbf24', '#fb7185'];
 
-export default {
-  id: 'prism', num: '05', name: 'Призма', en: 'Prism',
-  tagline: 'Иридесцентное стекло и спектр',
-  palette: ['#08070c', '#a78bfa', '#5eead4', '#ff6ec7'],
-  bg: '#08070c', accent: '#a78bfa', poster,
-
-  render(vm, ctx) {
-    const { state } = ctx;
+function render(vm: ViewModel, state: AppState): string {
     const k = vm.kpis;
     const rev = vm.revenue;
     const pts = rev.points;
@@ -232,9 +223,11 @@ export default {
         </footer>
       </main>
     </div>`;
-  },
+}
 
-  mount(root, vm) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+  // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
+  const root = rootEl as any;
     const max = niceMax(vm.revenue.max * 1.06);
     attachLineHover(root.querySelector('.pr-chartwrap'), vm.revenue.points,
       { x0: 6, x1: 694, y0: 18, y1: 196, w: 700, h: 240, yMax: max, yMin: 0 },
@@ -250,5 +243,21 @@ export default {
       root.querySelectorAll('.pr-nav button').forEach(x => x.classList.remove('is-on'));
       b.classList.add('is-on');
     }));
-  },
-};
+}
+
+/* ---------------- React-обёртка ----------------
+   Разметка темы — та же строка, что в v1: визуальная верность 1:1.
+   React отвечает за монтирование, жизненный цикл и code-splitting. */
+export default function Theme({ vm, state, actions }: ThemeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.innerHTML = render(vm, state);
+    return mount(root, vm, state);
+  });
+
+  void actions;
+  return <div ref={ref} />;
+}

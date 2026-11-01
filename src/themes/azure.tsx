@@ -1,33 +1,26 @@
+import { useEffect, useRef } from 'react';
+import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate, longDate, monthYear } from '../lib/data';
+import type { ViewModel, AppState } from '../lib/data';
+import type { ThemeProps } from '../lib/themes';
+import { icon, logo, delta, rangeControl, rangeShort, segmentControl, segmentSelect, avatar, themeButton, countUp, healthColor, tinyBars } from '../lib/ui';
+import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover, roundedBar, arcPath, polar, roundRect, clamp, ticks } from '../lib/charts';
+import '../styles/themes/azure.css';
+
 /* ============================================================
    CONCEPT 01 · ГЛУБИНА / Deep Azure
    Luminous ocean-blue glass. Sonar calm, premium fintech.
    ============================================================ */
-import { fmtMoney, fmtMoneyShort, fmtInt, fmtPct, fmtDelta, shortDate } from '../data.js';
-import { icon, logo, delta, rangeControl, segmentSelect, avatar, themeButton, countUp } from '../ui.js';
-import { linePath, areaPath, sparkPath, donutArcs, niceMax, attachLineHover, attachBarHover } from '../charts.js';
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s: unknown) => String(s).replace(/[&<>"']/g, c => ESC_MAP[c]);
 
-const poster = `
-  <div class="p-az-orbs"><i></i><i></i></div>
-  <div class="p-az-rings"><i></i><i></i><i></i></div>
-  <div class="p-az-kicker"><span></span>LIVE · MRR</div>
-  <div class="p-az-num">48,2<small>МЛН ₽</small></div>
-  <div class="p-az-svg"><svg viewBox="0 0 300 90" preserveAspectRatio="none">
-    <defs><linearGradient id="paz" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#63e8ff" stop-opacity=".5"/><stop offset="1" stop-color="#2f6bff" stop-opacity="0"/>
-    </linearGradient></defs>
-    <path d="M0,72 C34,64 48,30 80,36 C112,42 122,68 154,55 C186,42 204,16 236,23 C262,28 280,42 300,33 L300,90 L0,90 Z" fill="url(#paz)"/>
-    <path d="M0,72 C34,64 48,30 80,36 C112,42 122,68 154,55 C186,42 204,16 236,23 C262,28 280,42 300,33" fill="none" stroke="#9df4ff" stroke-width="1.5"/>
-  </svg></div>
-  <div class="p-az-foot"><span>ГЛУБИНА</span><span>01</span></div>`;
 
-function weekday(date) {
+function weekday(date: Date) {
   const s = date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function kpiSparks(vm) {
+function kpiSparks(vm: ViewModel) {
   const s = vm.revenue.spark;
   return {
     mrr: s,
@@ -37,14 +30,7 @@ function kpiSparks(vm) {
   };
 }
 
-export default {
-  id: 'azure', num: '01', name: 'Глубина', en: 'Deep Azure',
-  tagline: 'Светящийся синий, стекло и сонар',
-  palette: ['#071a45', '#2f6bff', '#57e6ff', '#eef4ff'],
-  bg: '#050d20', accent: '#4d8dff', poster,
-
-  render(vm, ctx) {
-    const { state } = ctx;
+function render(vm: ViewModel, state: AppState): string {
     const k = vm.kpis;
     const rev = vm.revenue;
     const points = rev.points;
@@ -359,16 +345,18 @@ export default {
         </footer>
       </main>
     </div>`;
-  },
+}
 
-  mount(root, vm, ctx) {
+function mount(rootEl: HTMLElement, vm: ViewModel, state: AppState) {
+  // строковая разметка v1: узлы ищутся вручную, DOM здесь нетипизирован
+  const root = rootEl as any;
     const rev = vm.revenue;
     const n = rev.points.length;
     const max = niceMax(rev.max * 1.1);
     const geom = { x0: 48, x1: 762, y0: 16, y1: 238, w: 780, h: 296, yMax: max, yMin: 0 };
     const chart = root.querySelector('[data-chart="revenue"]');
     attachLineHover(chart, rev.points, geom, (p) => {
-      const d = p.prev ? (p.v - p.prev) / p.prev * 100 : null;
+      const d = p.prev ? (p.v - p.prev) / p.prev * 100 : 0;
       return `<div class="tt-date">${p.full} · ${p.weekday}</div>
         <div class="tt-row"><span class="tt-label">Выручка</span><span class="tt-val">${fmtMoney(p.v)}</span></div>
         ${p.prev != null ? `<div class="tt-row"><span class="tt-label">Прошлый</span><span class="tt-val">${fmtMoney(p.prev)}</span></div>
@@ -397,5 +385,21 @@ export default {
         btn.classList.add('is-active');
       });
     });
-  },
-};
+}
+
+/* ---------------- React-обёртка ----------------
+   Разметка темы — та же строка, что в v1: визуальная верность 1:1.
+   React отвечает за монтирование, жизненный цикл и code-splitting. */
+export default function Theme({ vm, state, actions }: ThemeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.innerHTML = render(vm, state);
+    return mount(root, vm, state);
+  });
+
+  void actions;
+  return <div ref={ref} />;
+}
